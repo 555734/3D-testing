@@ -1,0 +1,30 @@
+name: Fetch Android test APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fetch-android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Android port v3.2 APK
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 3             -o MvsL_Mobile_Enhanced.apk             "https://github.com/BasHeemskerk/NSMB-MarioVsLuigi-Android/releases/download/3.2.0/MvsL_Mobile_Enhanced.apk"
+          sha256sum MvsL_Mobile_Enhanced.apk | tee SHA256SUMS.txt
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MvsL-Android-v3.2-test
+          path: |
+            MvsL_Mobile_Enhanced.apk
+            SHA256SUMS.txt
+          if-no-files-found: error
