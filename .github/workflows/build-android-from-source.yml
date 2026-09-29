@@ -1,0 +1,51 @@
+name: Build Android port from source
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test harness
+        uses: actions/checkout@v4
+
+      - name: Clone Android port source
+        run: |
+          set -euxo pipefail
+          git clone --depth 1 https://github.com/BasHeemskerk/NSMB-MarioVsLuigi-Android.git source
+          cd source
+          git lfs install
+          git lfs pull
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: source/Library
+          key: unity-android-2022.3.30f1-${{ hashFiles('source/Assets/**', 'source/Packages/**', 'source/ProjectSettings/**') }}
+          restore-keys: |
+            unity-android-2022.3.30f1-
+
+      - name: Build APK with Unity
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: source
+          unityVersion: 2022.3.30f1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildName: MvsL-Mobile-Test
+          buildsPath: build
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MvsL-Mobile-source-build
+          path: build/Android
+          if-no-files-found: error
